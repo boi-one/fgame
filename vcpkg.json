@@ -1,0 +1,20 @@
+{
+  "name": "fgame",
+  "version": "1.0.0",  
+  "dependencies": [
+
+        "sdl2",
+
+        "opengl",
+
+        "imgui",
+
+        "glew",
+        
+        {
+          "name": "imgui",
+          "features": ["sdl2-binding", "opengl3-binding"]
+        }
+    ]
+
+}
