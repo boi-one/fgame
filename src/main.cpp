@@ -185,8 +185,7 @@ int main()
 	ImGui_ImplSDL2_InitForOpenGL(window, gl_context);
 	ImGui_ImplOpenGL3_Init("#version 330");
 	ImGuiIO& io = ImGui::GetIO();
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LESS);
+
 #pragma endregion setup
 
 	const char* vertexShaderSource = "#version 330 core\n"
