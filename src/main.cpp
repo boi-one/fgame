@@ -6,6 +6,7 @@
 #include "imgui_impl_opengl3.h"
 #include <glm/glm.hpp>
 #include <iostream>
+#include <string>
 
 struct Vector2
 {
@@ -86,8 +87,9 @@ static InitReturn WindowInitialization(Camera& camera)
 		SDL_Quit();
 		return { -1 };
 	}
-	if (glewInit())
+	if (glewInit() != GLEW_OK)
 	{
+		std::cerr << "GLEW Initialization Failed: " << glewGetErrorString(glewInit()) << std::endl;
 		SDL_GL_DeleteContext(r.gl_context);
 		SDL_DestroyWindow(window);
 		SDL_Quit();
@@ -98,6 +100,19 @@ static InitReturn WindowInitialization(Camera& camera)
 }
 
 bool running = true;
+
+int CheckForGLError(std::string fnName)
+{
+	fnName += ' ';
+
+	GLenum err = glGetError();
+	if (err != GL_NO_ERROR)
+	{
+		std::cout << "OpenGL error after " << fnName << err << std::endl;
+		return -1;
+	}
+	return 0;
+}
 
 int CheckForSuccess(unsigned int shader)
 {
@@ -119,10 +134,43 @@ int CheckForSuccess(unsigned int shader)
 			std::cout << "ERROR::LINK::STATUS::COMPILATION_FAILED\n" << infoLog << std::endl;
 			break;
 		}
+		return -1;
+	}
+	GLenum err = glGetError();
+	if (err != GL_NO_ERROR)
+	{
+		switch (shader)
+		{
+		case GL_VERTEX_SHADER:
+			std::cout << "VERTEX" << std::endl;
+			break;
+		case GL_FRAGMENT_SHADER:
+			std::cout << "FRAGMENT" << std::endl;
+			break;
+		case GL_LINK_STATUS:
+			std::cout << "LINKING" << std::endl;
+			break;
+		default:
+			std::cout << "other" << std::endl;
+			break;
+		}
+		std::cout << "OpenGL error: " << err << std::endl;
 	}
 	return success;
 }
-
+int CheckForLinking(unsigned int program)
+{
+	int success;
+	char infoLog[512];
+	glGetProgramiv(program, GL_LINK_STATUS, &success);
+	if (!success)
+	{
+		glGetProgramInfoLog(program, 512, NULL, infoLog);
+		std::cout << "ERROR::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+		return -1;
+	}
+	return success;
+}
 int main()
 {
 	Camera camera;
@@ -154,46 +202,53 @@ int main()
 		"	FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);"
 		"}\0";
 
-
-	float vertices[] =
-	{
-		-1.f, -1.f,
-		 1.f, -1.f,
-		 0.f,  1.f
-	};
-
-	GLuint VBO;
-	glGenBuffers(1, &VBO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-	glEnableVertexAttribArray(0);
-
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-
 	unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
 	glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
 	glCompileShader(vertexShader);
-	CheckForSuccess(GL_VERTEX_SHADER);
+	CheckForSuccess(vertexShader);
 
 	unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 	glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
 	glCompileShader(fragmentShader);
-	CheckForSuccess(GL_FRAGMENT_SHADER);
+	CheckForSuccess(fragmentShader);
 
 	unsigned int shaderProgram = glCreateProgram();
 	glAttachShader(shaderProgram, vertexShader);
 	glAttachShader(shaderProgram, fragmentShader);
 	glLinkProgram(shaderProgram);
 	CheckForSuccess(shaderProgram);
+	CheckForLinking(shaderProgram);
 
-	glUseProgram(shaderProgram);
 	glDeleteShader(vertexShader);
 	glDeleteShader(fragmentShader);
 
-	glDrawArrays(GL_TRIANGLES, 0, 3);
-	glDisableVertexAttribArray(0);
+	/*********************************************************************/
 
+	float vertices[] = {
+		-0.5f, -0.5f, 0.0f, 
+		 0.5f, -0.5f, 0.0f, 
+		 0.0f,  0.5f, 0.0f 
+	};
+
+
+	unsigned int VBO, VAO;
+	glGenVertexArrays(1, &VAO);
+	glGenBuffers(1, &VBO);
+	
+
+	glBindVertexArray(VAO);
+
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	
+	glBindVertexArray(0);
 
 	while (running)
 	{
@@ -207,16 +262,25 @@ int main()
 		ImGui_ImplSDL2_NewFrame();
 		ImGui::NewFrame();
 
-		glClearColor(0.f, 0.f, 0.f, 1.f);
+		glClearColor(.0f, .0f, .0f, 1.f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		//Update here 
-
+		glUseProgram(shaderProgram);
+		glBindVertexArray(VAO);
+		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glBindVertexArray(0);
 
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 		SDL_GL_SwapWindow(window);
 	}
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplSDL2_Shutdown();
+	ImGui::DestroyContext();
+	glDeleteVertexArrays(1, &VAO);
+	glDeleteBuffers(1, &VBO);
+	glDeleteProgram(shaderProgram);
 
 
 	return 0;
