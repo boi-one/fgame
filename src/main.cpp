@@ -1,9 +1,10 @@
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
+#include <SDL_image.h>
 #include "imgui.h"
 #include "imgui_impl_sdl2.h"
 #include "imgui_impl_opengl3.h"
-#include <glm/glm.hpp>
+#include <iostream>
 
 #include "shader.h"
 
@@ -82,64 +83,6 @@ int CheckForGLError(std::string fnName)
 	return 0;
 }
 
-int CheckForSuccess(unsigned int shader)
-{
-	int success;
-	char infoLog[512];
-	glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-	if (!success)
-	{
-		glGetShaderInfoLog(shader, 512, NULL, infoLog);
-		switch (shader)
-		{
-		case GL_VERTEX_SHADER:
-			std::cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
-			break;
-		case GL_FRAGMENT_SHADER:
-			std::cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
-			break;
-		case GL_LINK_STATUS:
-			std::cout << "ERROR::LINK::STATUS::COMPILATION_FAILED\n" << infoLog << std::endl;
-			break;
-		}
-		return -1;
-	}
-	GLenum err = glGetError();
-	if (err != GL_NO_ERROR)
-	{
-		switch (shader)
-		{
-		case GL_VERTEX_SHADER:
-			std::cout << "VERTEX" << std::endl;
-			break;
-		case GL_FRAGMENT_SHADER:
-			std::cout << "FRAGMENT" << std::endl;
-			break;
-		case GL_LINK_STATUS:
-			std::cout << "LINKING" << std::endl;
-			break;
-		default:
-			std::cout << "other" << std::endl;
-			break;
-		}
-		std::cout << "OpenGL error: " << err << std::endl;
-	}
-	return success;
-}
-
-int CheckForLinking(unsigned int program)
-{
-	int success;
-	char infoLog[512];
-	glGetProgramiv(program, GL_LINK_STATUS, &success);
-	if (!success)
-	{
-		glGetProgramInfoLog(program, 512, NULL, infoLog);
-		std::cout << "ERROR::PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
-		return -1;
-	}
-	return success;
-}
 int main()
 {
 	Camera camera;
@@ -157,53 +100,14 @@ int main()
 
 #pragma endregion setup
 
-	const char* vertexShaderSource = "#version 330 core\n"
-		"layout (location = 0) in vec2 aPos;\n"
-		"layout (location = 1) in vec3 aCol;\n"
-		"out vec3 Color;\n"
-		"void main()\n"
-		"{\n"
-		"   gl_Position = vec4(aPos.x, aPos.y, 1.0, 1.0);\n"
-		"	Color = aCol;\n"
-		"}\0";
-	const char* fragmentShaderSource = "#version 330 core\n"
-		"out vec4 FragColor;\n"
-		"in vec3 Color;\n"
-		"void main()\n"
-		"{\n"
-		"	FragColor = vec4(Color, 1.0f);"
-		"}\0";
-	//TODO: ZET DE SHADER IN EEN FILE
+	Shader defaultShader("resources/shaders/default.vert", "resources/shaders/default.frag");
 
-	unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-	glCompileShader(vertexShader);
-	CheckForSuccess(vertexShader);
-
-	unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-	glCompileShader(fragmentShader);
-	CheckForSuccess(fragmentShader);
-
-	Shader defaultShader("resources/vertex.shader", "resources/fragment.shader");
-
-	defaultShader.ID = glCreateProgram();
-	glAttachShader(defaultShader.ID, vertexShader);
-	glAttachShader(defaultShader.ID, fragmentShader);
-	glLinkProgram(defaultShader.ID);
-	CheckForLinking(defaultShader.ID);
-
-	glDeleteShader(vertexShader);
-	glDeleteShader(fragmentShader);
-
-	/*********************************************************************/
-
-	float vertices[] = 
+	float vertices[] =
 	{
-		0.5f,  0.5f,	1.0f, 0.0f, 0.0f,
-		0.5f, -0.5f,  	0.0f, 1.0f, 0.0f,
-	   -0.5f, -0.5f,  	0.0f, 0.0f, 1.0f,
-	   -0.5f,  0.5f,	1.0f, 1.0f, 1.0f,
+		0.5f,  0.5f,	1.0f, 0.0f, 0.0f,	1.0f, 1.0f,
+		0.5f, -0.5f,  	0.0f, 1.0f, 0.0f,	1.0f, 0.0f,
+	   -0.5f, -0.5f,  	0.0f, 0.0f, 1.0f,	0.0f, 0.0f,
+	   -0.5f,  0.5f,	0.0f, 0.0f, 0.0f,	0.0f, 1.0f,
 	};
 
 	unsigned int indices[] =
@@ -212,28 +116,45 @@ int main()
 		1, 2, 3
 	};
 
-
 	unsigned int VBO, VAO, EBO;
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
 	glGenBuffers(1, &EBO);
-	
+
 
 	glBindVertexArray(VAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-	
+
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)(2 * sizeof(float)));
 	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)(5 * sizeof(float)));
+	glEnableVertexAttribArray(2);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
+
+	unsigned int texture;
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+
+
+
+	SDL_Surface* image = IMG_Load("resources/textures/container.jpg");
+	if (image)
+	{
+		void* imageData = image->pixels;
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image->w, image->h, 0, GL_RGB, GL_UNSIGNED_BYTE, imageData);
+		glGenerateMipmap(GL_TEXTURE_2D);
+		SDL_FreeSurface(image);
+	}
+	else printf("Failed to load texture: %s\n", IMG_GetError());
 
 	while (running)
 	{
@@ -241,7 +162,7 @@ int main()
 		while (SDL_PollEvent(&event))
 		{
 			ImGui_ImplSDL2_ProcessEvent(&event);
-			if (event.type == SDL_QUIT)	running = false;
+			if (event.type == SDL_QUIT || !texture)	running = false;
 		}
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplSDL2_NewFrame();
@@ -251,7 +172,10 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		//Update here 
+
+		defaultShader.Use();
 		glUseProgram(defaultShader.ID);
+		glBindTexture(GL_TEXTURE_2D, texture);
 		glBindVertexArray(VAO);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);

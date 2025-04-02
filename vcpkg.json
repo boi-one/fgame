@@ -5,6 +5,8 @@
 
         "sdl2",
 
+        "sdl2-image",
+
         "opengl",
 
         "imgui",
