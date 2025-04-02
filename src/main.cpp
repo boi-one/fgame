@@ -1,50 +1,18 @@
 #define SDL_MAIN_HANDLED
 #include <SDL.h>
-#include <GL/glew.h>
 #include "imgui.h"
 #include "imgui_impl_sdl2.h"
 #include "imgui_impl_opengl3.h"
 #include <glm/glm.hpp>
-#include <iostream>
-#include <string>
 
-struct Vector2
-{
-	float x, y;
-
-	Vector2(float x = 0, float y = 0)
-	{
-		this->x = x;
-		this->y = y;
-	}
-
-	Vector2 operator+(const Vector2& other)
-	{
-		return { (this->x + other.x), (this->y + other.y) };
-	}
-
-	Vector2 operator-(const Vector2& other)
-	{
-		return { (this->x - other.x), (this->y - other.y) };
-	}
-
-	Vector2 operator*(const Vector2& other)
-	{
-		return { (this->x * other.x), (this->y * other.y) };
-	}
-
-	Vector2 operator/(const Vector2& other)
-	{
-		return { (this->x / other.x), (this->y / other.y) };
-	}
-};
+#include "shader.h"
 
 struct Camera
 {
 	struct Viewport
 	{
-		int windowWidth = 900;
-		int windowHeight = 600;
+		int windowWidth = 500;
+		int windowHeight = 500;
 	};
 	Viewport viewport;
 };
@@ -73,7 +41,7 @@ static InitReturn WindowInitialization(Camera& camera)
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-	SDL_Window* window = SDL_CreateWindow("fgame", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, camera.viewport.windowWidth, camera.viewport.windowHeight, SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_MAXIMIZED);
+	SDL_Window* window = SDL_CreateWindow("fgame", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, camera.viewport.windowWidth, camera.viewport.windowHeight, SDL_WINDOW_RESIZABLE | SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN /*| SDL_WINDOW_MAXIMIZED*/);
 	if (!window)
 	{
 		SDL_Quit();
@@ -158,6 +126,7 @@ int CheckForSuccess(unsigned int shader)
 	}
 	return success;
 }
+
 int CheckForLinking(unsigned int program)
 {
 	int success;
@@ -189,17 +158,22 @@ int main()
 #pragma endregion setup
 
 	const char* vertexShaderSource = "#version 330 core\n"
-		"layout (location = 0) in vec3 aPos;\n"
+		"layout (location = 0) in vec2 aPos;\n"
+		"layout (location = 1) in vec3 aCol;\n"
+		"out vec3 Color;\n"
 		"void main()\n"
 		"{\n"
-		"   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
+		"   gl_Position = vec4(aPos.x, aPos.y, 1.0, 1.0);\n"
+		"	Color = aCol;\n"
 		"}\0";
 	const char* fragmentShaderSource = "#version 330 core\n"
 		"out vec4 FragColor;\n"
+		"in vec3 Color;\n"
 		"void main()\n"
 		"{\n"
-		"	FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);"
+		"	FragColor = vec4(Color, 1.0f);"
 		"}\0";
+	//TODO: ZET DE SHADER IN EEN FILE
 
 	unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
 	glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
@@ -211,42 +185,54 @@ int main()
 	glCompileShader(fragmentShader);
 	CheckForSuccess(fragmentShader);
 
-	unsigned int shaderProgram = glCreateProgram();
-	glAttachShader(shaderProgram, vertexShader);
-	glAttachShader(shaderProgram, fragmentShader);
-	glLinkProgram(shaderProgram);
-	CheckForSuccess(shaderProgram);
-	CheckForLinking(shaderProgram);
+	Shader defaultShader("resources/vertex.shader", "resources/fragment.shader");
+
+	defaultShader.ID = glCreateProgram();
+	glAttachShader(defaultShader.ID, vertexShader);
+	glAttachShader(defaultShader.ID, fragmentShader);
+	glLinkProgram(defaultShader.ID);
+	CheckForLinking(defaultShader.ID);
 
 	glDeleteShader(vertexShader);
 	glDeleteShader(fragmentShader);
 
 	/*********************************************************************/
 
-	float vertices[] = {
-		-0.5f, -0.5f, 0.0f, 
-		 0.5f, -0.5f, 0.0f, 
-		 0.0f,  0.5f, 0.0f 
+	float vertices[] = 
+	{
+		0.5f,  0.5f,	1.0f, 0.0f, 0.0f,
+		0.5f, -0.5f,  	0.0f, 1.0f, 0.0f,
+	   -0.5f, -0.5f,  	0.0f, 0.0f, 1.0f,
+	   -0.5f,  0.5f,	1.0f, 1.0f, 1.0f,
+	};
+
+	unsigned int indices[] =
+	{
+		0, 1, 3,
+		1, 2, 3
 	};
 
 
-	unsigned int VBO, VAO;
+	unsigned int VBO, VAO, EBO;
 	glGenVertexArrays(1, &VAO);
 	glGenBuffers(1, &VBO);
+	glGenBuffers(1, &EBO);
 	
 
 	glBindVertexArray(VAO);
 
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 	
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(1);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	
 	glBindVertexArray(0);
 
 	while (running)
@@ -265,9 +251,9 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		//Update here 
-		glUseProgram(shaderProgram);
+		glUseProgram(defaultShader.ID);
 		glBindVertexArray(VAO);
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
 
 		ImGui::Render();
@@ -279,8 +265,7 @@ int main()
 	ImGui::DestroyContext();
 	glDeleteVertexArrays(1, &VAO);
 	glDeleteBuffers(1, &VBO);
-	glDeleteProgram(shaderProgram);
-
+	glDeleteProgram(defaultShader.ID);
 
 	return 0;
 }
