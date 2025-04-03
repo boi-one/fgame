@@ -5,8 +5,9 @@
 #include "imgui_impl_sdl2.h"
 #include "imgui_impl_opengl3.h"
 #include <iostream>
-
-#include "shader.h"
+#include "transform.h"
+#include "texture.h"
+#include "mesh.h"
 
 struct Camera
 {
@@ -92,6 +93,10 @@ int main()
 {
 	Camera camera;
 
+	Mesh m;
+
+	Texture t("abc.png");
+
 #pragma region setup
 	InitReturn r = WindowInitialization(camera);
 	if (r.failed == -1) return -1;
@@ -102,60 +107,9 @@ int main()
 	ImGui_ImplSDL2_InitForOpenGL(window, gl_context);
 	ImGui_ImplOpenGL3_Init("#version 330");
 	ImGuiIO& io = ImGui::GetIO();
-
 #pragma endregion setup
 
 	Shader defaultShader("resources/shaders/default.vert", "resources/shaders/default.frag");
-
-	float vertices[] =
-	{
-		0.5f,  0.5f,	1.0f, 0.0f, 0.0f,	1.0f, 1.0f,
-		0.5f, -0.5f,  	0.0f, 1.0f, 0.0f,	1.0f, 0.0f,
-	   -0.5f, -0.5f,  	0.0f, 0.0f, 1.0f,	0.0f, 0.0f,
-	   -0.5f,  0.5f,	0.0f, 0.0f, 0.0f,	0.0f, 1.0f,
-	};
-
-	unsigned int indices[] =
-	{
-		0, 1, 3,
-		1, 2, 3
-	};
-
-	unsigned int VBO, VAO, EBO;
-	glGenVertexArrays(1, &VAO);
-	glGenBuffers(1, &VBO);
-	glGenBuffers(1, &EBO);
-
-
-	glBindVertexArray(VAO);
-
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)(2 * sizeof(float)));
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)(5 * sizeof(float)));
-	glEnableVertexAttribArray(2);
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
-
-	//unsigned int texture;
-	//glGenTextures(1, &texture);
-	//glBindTexture(GL_TEXTURE_2D, texture);
-	//
-
-	if (FILE* file = fopen("resources/textures/container.png", "r"))
-	{
-		printf("file found\n");
-		fclose(file);
-	}
-	else printf("File not found\n");
 
 	SDL_Surface* surface = IMG_Load("resources/textures/container.png");
 	if (!surface) {
@@ -164,13 +118,14 @@ int main()
 	}
 
 	GLuint texture;
-	glGenTextures(1, &texture);
+	
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texture);
+	// miss nog in de texture constructor: glBindTexture(GL_TEXTURE_2D, texture);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surface->w, surface->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surface->pixels);
 	SDL_FreeSurface(surface);
+	float x = 0;
 
 	while (running)
 	{
@@ -179,6 +134,17 @@ int main()
 		{
 			ImGui_ImplSDL2_ProcessEvent(&event);
 			if (event.type == SDL_QUIT)	running = false;
+			if (event.type == SDL_KEYDOWN)
+			{
+				if (event.key.keysym.sym == SDLK_a)
+				{
+					x -= 0.1f;
+				}
+				if (event.key.keysym.sym == SDLK_d)
+				{
+					x += 0.1f;
+				}
+			}
 		}
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplSDL2_NewFrame();
@@ -188,6 +154,10 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		//Update here 
+
+		glm::mat4 transform = glm::mat4(1.0f);
+		transform = glm::translate(transform, glm::vec3(x, 0.0f, 0.0f));
+		defaultShader.SetMat4("Transform", transform);
 
 		defaultShader.Use();
 		glUseProgram(defaultShader.ID);

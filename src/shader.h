@@ -7,9 +7,8 @@
 #include <glm/glm.hpp>
 using std::string;
 
-class Shader
+struct Shader
 {
-public:
 	unsigned int ID;
 	Shader(const char* vertexPath, const char* fragmentPath);
 	void Use();
