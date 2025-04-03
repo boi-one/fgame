@@ -25,7 +25,7 @@ find_package(PNG REQUIRED)
 
 find_package(ZLIB REQUIRED)
 
-file(GLOB_RECURSE SRC_FILES src/*.cpp src/*.h src/shaders/*.vert src/shaders/*.frag)
+file(GLOB_RECURSE SRC_FILES src/*.cpp src/*.h src/resources/shaders/*.vert src/resources/shaders/*.frag)
 
 add_executable(${PROJECT_NAME} src/main.cpp ${SRC_FILES})
 
