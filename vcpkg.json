@@ -1,7 +1,7 @@
 {
   "name": "fgame",
-  "version": "1.0.0",  
-  "dependencies": [
+  "version": "1.0.0",
+    "dependencies": [
 
         "sdl2",
 
@@ -14,11 +14,15 @@
         "glew",
 
         "glm",
-        
+
         {
-          "name": "imgui",
-          "features": ["sdl2-binding", "opengl3-binding"]
-        }
+            "name": "imgui",
+            "features": [ "sdl2-binding", "opengl3-binding" ]
+        },
+
+        "libjpeg-turbo",
+        "libpng",
+	"zlib"
     ]
 
 }

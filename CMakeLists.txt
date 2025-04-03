@@ -19,15 +19,21 @@ find_package(ImGui REQUIRED)
 
 find_package(GLEW REQUIRED)
 
+find_package(JPEG REQUIRED)
+
+find_package(PNG REQUIRED)
+
+find_package(ZLIB REQUIRED)
+
 file(GLOB_RECURSE SRC_FILES src/*.cpp src/*.h src/shaders/*.vert src/shaders/*.frag)
 
 add_executable(${PROJECT_NAME} src/main.cpp ${SRC_FILES})
 
-target_link_libraries(${PROJECT_NAME} PRIVATE SDL2::SDL2 SDL2_image::SDL2_image GLEW::GLEW OpenGL::GL imgui::imgui)
+target_link_libraries(${PROJECT_NAME} PRIVATE SDL2::SDL2 SDL2_image::SDL2_image GLEW::GLEW OpenGL::GL imgui::imgui JPEG::JPEG PNG::PNG ZLIB::ZLIB)
 
 
 make_directory(${CMAKE_BINARY_DIR}/resources/shaders)
-file(GLOB SRC_FILES "${CMAKE_SOURCE_DIR}/src/shaders/*")
+file(GLOB SRC_FILES "${CMAKE_SOURCE_DIR}/src/resources/shaders/*")
 foreach(SRC_FILE ${SRC_FILES})
 	file(COPY ${SRC_FILE} DESTINATION ${CMAKE_BINARY_DIR}/resources/shaders)
 	file(COPY ${SRC_FILE} DESTINATION ${CMAKE_BINARY_DIR}/Debug/resources/shaders)
@@ -35,7 +41,7 @@ foreach(SRC_FILE ${SRC_FILES})
 endforeach()
 
 make_directory(${CMAKE_BINARY_DIR}/resources/textures)
-file(GLOB SRC_FILES "${CMAKE_SOURCE_DIR}/src/textures/*")
+file(GLOB SRC_FILES "${CMAKE_SOURCE_DIR}/src/resources/textures/*")
 foreach(SRC_FILE ${SRC_FILES})
 	file(COPY ${SRC_FILE} DESTINATION ${CMAKE_BINARY_DIR}/resources/textures)
 	file(COPY ${SRC_FILE} DESTINATION ${CMAKE_BINARY_DIR}/Debug/resources/textures)

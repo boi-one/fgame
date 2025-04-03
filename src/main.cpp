@@ -39,6 +39,11 @@ static InitReturn WindowInitialization(Camera& camera)
 	{
 		return { -1 };
 	}
+	if (!(IMG_Init(IMG_INIT_PNG) | IMG_INIT_PNG))
+	{
+		printf("IMG_Init: %s\n", IMG_GetError());
+		return { -1 };
+	}
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
@@ -140,21 +145,31 @@ int main()
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 
-	unsigned int texture;
+	//unsigned int texture;
+	//glGenTextures(1, &texture);
+	//glBindTexture(GL_TEXTURE_2D, texture);
+	//
+
+	if (FILE* file = fopen("resources/textures/container.png", "r"))
+	{
+		printf("file found\n");
+		fclose(file);
+	}
+	else printf("File not found\n");
+
+	SDL_Surface* surface = IMG_Load("resources/textures/container.png");
+	if (!surface) {
+		printf("IMG_Load Error: %s\n", IMG_GetError());
+		return -1;
+	}
+
+	GLuint texture;
 	glGenTextures(1, &texture);
 	glBindTexture(GL_TEXTURE_2D, texture);
-
-
-
-	SDL_Surface* image = IMG_Load("resources/textures/container.jpg");
-	if (image)
-	{
-		void* imageData = image->pixels;
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, image->w, image->h, 0, GL_RGB, GL_UNSIGNED_BYTE, imageData);
-		glGenerateMipmap(GL_TEXTURE_2D);
-		SDL_FreeSurface(image);
-	}
-	else printf("Failed to load texture: %s\n", IMG_GetError());
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surface->w, surface->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surface->pixels);
+	SDL_FreeSurface(surface);
 
 	while (running)
 	{
@@ -162,7 +177,7 @@ int main()
 		while (SDL_PollEvent(&event))
 		{
 			ImGui_ImplSDL2_ProcessEvent(&event);
-			if (event.type == SDL_QUIT || !texture)	running = false;
+			if (event.type == SDL_QUIT)	running = false;
 		}
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplSDL2_NewFrame();
