@@ -1,5 +1,6 @@
 #pragma once
 #include <GL/glew.h>
+#include "shader.h"
 
 struct Mesh
 {
@@ -24,7 +25,6 @@ struct Mesh
 		glGenVertexArrays(1, &VAO);
 		glGenBuffers(1, &VBO);
 		glGenBuffers(1, &EBO);
-
 
 		glBindVertexArray(VAO);
 

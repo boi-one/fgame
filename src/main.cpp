@@ -5,9 +5,7 @@
 #include "imgui_impl_sdl2.h"
 #include "imgui_impl_opengl3.h"
 #include <iostream>
-#include "transform.h"
-#include "texture.h"
-#include "mesh.h"
+#include "object.h"
 
 struct Camera
 {
@@ -92,11 +90,7 @@ int CheckForGLError(std::string fnName)
 int main()
 {
 	Camera camera;
-
-	Mesh m;
-
-	Texture t("abc.png");
-
+	
 #pragma region setup
 	InitReturn r = WindowInitialization(camera);
 	if (r.failed == -1) return -1;
@@ -108,24 +102,8 @@ int main()
 	ImGui_ImplOpenGL3_Init("#version 330");
 	ImGuiIO& io = ImGui::GetIO();
 #pragma endregion setup
-
-	Shader defaultShader("resources/shaders/default.vert", "resources/shaders/default.frag");
-
-	SDL_Surface* surface = IMG_Load("resources/textures/container.png");
-	if (!surface) {
-		printf("IMG_Load Error: %s\n", IMG_GetError());
-		return -1;
-	}
-
-	GLuint texture;
-	
-	glActiveTexture(GL_TEXTURE0);
-	// miss nog in de texture constructor: glBindTexture(GL_TEXTURE_2D, texture);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surface->w, surface->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surface->pixels);
-	SDL_FreeSurface(surface);
 	float x = 0;
+	Object base;
 
 	while (running)
 	{
@@ -154,17 +132,9 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		//Update here 
-
-		glm::mat4 transform = glm::mat4(1.0f);
-		transform = glm::translate(transform, glm::vec3(x, 0.0f, 0.0f));
-		defaultShader.SetMat4("Transform", transform);
-
-		defaultShader.Use();
-		glUseProgram(defaultShader.ID);
-		glBindTexture(GL_TEXTURE_2D, texture);
-		glBindVertexArray(VAO);
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
-		glBindVertexArray(0);
+		base.transform.position = glm::vec2(x, 1.0f);
+		base.transform.SetTransform();
+		base.Render();
 
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -173,9 +143,9 @@ int main()
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplSDL2_Shutdown();
 	ImGui::DestroyContext();
-	glDeleteVertexArrays(1, &VAO);
-	glDeleteBuffers(1, &VBO);
-	glDeleteProgram(defaultShader.ID);
+	glDeleteVertexArrays(1, &base.mesh.VAO);
+	glDeleteBuffers(1, &base.mesh.VBO);
+	glDeleteProgram(base.shader.ID);
 
 	return 0;
 }
