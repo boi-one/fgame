@@ -120,7 +120,7 @@ int CheckForGLError(std::string fnName)
 int main()
 {
 	Camera camera;
-
+	
 #pragma region setup
 	InitReturn r = WindowInitialization(camera);
 	if (r.failed == -1) return -1;
@@ -132,12 +132,7 @@ int main()
 	ImGui_ImplOpenGL3_Init("#version 330");
 	ImGuiIO& io = ImGui::GetIO();
 #pragma endregion setup
-
-	float x = 0;
-	float y = 0;
-	float cx = 0;
-	Object base;
-
+	Object base({-2.8f, 0});
 	while (running)
 	{
 		SDL_Event event;
@@ -145,23 +140,6 @@ int main()
 		{
 			ImGui_ImplSDL2_ProcessEvent(&event);
 			if (event.type == SDL_QUIT)	running = false;
-			if (event.type == SDL_KEYDOWN)
-			{
-				float speed = 10;
-
-				if (event.key.keysym.sym == SDLK_a)
-				{
-					x -= speed;
-				}
-				if (event.key.keysym.sym == SDLK_d)
-				{
-					x += speed;
-				}
-				if (event.key.keysym.sym == SDLK_w)
-					y += speed;
-				if (event.key.keysym.sym == SDLK_s)
-					y -= speed;
-			}
 		}
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplSDL2_NewFrame();
@@ -173,15 +151,16 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		//Update here 
-		camera.position = glm::vec2(x, y);
-		base.shader.Use();
-		camera.SetProjection();
-		base.shader.SetMat4("Projection", camera.GetProjection());
 
-		base.transform.position = glm::vec2(0.f, 0.f);
-		base.transform.scale = glm::vec2(1.f, 1.f);
-		base.transform.SetTransform();
-		base.Render();
+		camera.SetProjection();
+		
+		for (Object& object : Object::allObjects)
+		{
+			object.shader.Use();
+			object.shader.SetMat4("Projection", camera.GetProjection());
+			base.transform.SetTransform();
+			base.Render();
+		}
 
 		ImGui::Render();
 		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
