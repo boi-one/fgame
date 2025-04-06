@@ -26,14 +26,16 @@ struct Camera
 		viewport.top = viewport.windowHeight * 0.5f;
 		viewport.bottom = -(viewport.windowHeight * 0.5f);
 
+		float scale = 0.01f;
+
 		projection = glm::mat4(1.0f);
 
 		projection = glm::ortho(
-			viewport.left + position.x,
-			viewport.right + position.x,
-			viewport.bottom + position.y,
-			viewport.top + position.y,
-			0.1f, 100.f);
+			(viewport.left + position.x) * scale,
+			(viewport.right + position.x) * scale,
+			(viewport.bottom + position.y) * scale,
+			(viewport.top + position.y) * scale,
+			-1.0f, 1.0f);
 	}
 
 	glm::mat4 GetProjection()
@@ -145,18 +147,20 @@ int main()
 			if (event.type == SDL_QUIT)	running = false;
 			if (event.type == SDL_KEYDOWN)
 			{
+				float speed = 10;
+
 				if (event.key.keysym.sym == SDLK_a)
 				{
-					x -= 0.1f;
+					x -= speed;
 				}
 				if (event.key.keysym.sym == SDLK_d)
 				{
-					x += 0.1f;
+					x += speed;
 				}
 				if (event.key.keysym.sym == SDLK_w)
-					y -= 0.1f;
+					y += speed;
 				if (event.key.keysym.sym == SDLK_s)
-					y += 0.1f;
+					y -= speed;
 			}
 		}
 		ImGui_ImplOpenGL3_NewFrame();
@@ -170,12 +174,12 @@ int main()
 
 		//Update here 
 		camera.position = glm::vec2(x, y);
-		//std::cout << x << " " << y << std::endl;
 		base.shader.Use();
 		camera.SetProjection();
 		base.shader.SetMat4("Projection", camera.GetProjection());
 
 		base.transform.position = glm::vec2(0.f, 0.f);
+		base.transform.scale = glm::vec2(1.f, 1.f);
 		base.transform.SetTransform();
 		base.Render();
 
