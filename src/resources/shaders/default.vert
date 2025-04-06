@@ -8,10 +8,11 @@ out vec3 Color;
 out vec2 TexCoord;
 
 uniform mat4 Transform;
+uniform mat4 Projection;
 
 void main()
 {
-	gl_Position = Transform * vec4(aPos.x, aPos.y, 1.0, 1.0);
+	gl_Position = Projection * Transform * vec4(aPos, 1.0, 1.0);
 	Color = aCol;
 	TexCoord = aTexCoord;
 }

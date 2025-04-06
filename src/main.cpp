@@ -13,8 +13,36 @@ struct Camera
 	{
 		int windowWidth = 500;
 		int windowHeight = 500;
+
+		float left{ 0 }, right{ 0 }, top{ 0 }, bottom{ 0 };
 	};
 	Viewport viewport;
+	glm::vec2 position = glm::vec2(0, 0);
+
+	void SetProjection()
+	{
+		viewport.left = -(viewport.windowWidth * 0.5f);
+		viewport.right = viewport.windowWidth * 0.5f;
+		viewport.top = viewport.windowHeight * 0.5f;
+		viewport.bottom = -(viewport.windowHeight * 0.5f);
+
+		projection = glm::mat4(1.0f);
+
+		projection = glm::ortho(
+			viewport.left + position.x,
+			viewport.right + position.x,
+			viewport.bottom + position.y,
+			viewport.top + position.y,
+			0.1f, 100.f);
+	}
+
+	glm::mat4 GetProjection()
+	{
+		return projection;
+	}
+
+private:
+	glm::mat4 projection;
 };
 
 struct InitReturn
@@ -90,7 +118,7 @@ int CheckForGLError(std::string fnName)
 int main()
 {
 	Camera camera;
-	
+
 #pragma region setup
 	InitReturn r = WindowInitialization(camera);
 	if (r.failed == -1) return -1;
@@ -102,7 +130,10 @@ int main()
 	ImGui_ImplOpenGL3_Init("#version 330");
 	ImGuiIO& io = ImGui::GetIO();
 #pragma endregion setup
+
 	float x = 0;
+	float y = 0;
+	float cx = 0;
 	Object base;
 
 	while (running)
@@ -122,17 +153,29 @@ int main()
 				{
 					x += 0.1f;
 				}
+				if (event.key.keysym.sym == SDLK_w)
+					y -= 0.1f;
+				if (event.key.keysym.sym == SDLK_s)
+					y += 0.1f;
 			}
 		}
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplSDL2_NewFrame();
 		ImGui::NewFrame();
 
-		glClearColor(.0f, .0f, .0f, 1.f);
+		SDL_GL_GetDrawableSize(window, &camera.viewport.windowWidth, &camera.viewport.windowHeight);
+		glViewport(0, 0, camera.viewport.windowWidth, camera.viewport.windowHeight);
+		glClearColor(1.0f, .0f, .0f, 1.f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		//Update here 
-		base.transform.position = glm::vec2(x, 1.0f);
+		camera.position = glm::vec2(x, y);
+		//std::cout << x << " " << y << std::endl;
+		base.shader.Use();
+		camera.SetProjection();
+		base.shader.SetMat4("Projection", camera.GetProjection());
+
+		base.transform.position = glm::vec2(0.f, 0.f);
 		base.transform.SetTransform();
 		base.Render();
 

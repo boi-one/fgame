@@ -12,11 +12,6 @@ public:
 	Transform transform;
 	Shader shader = Shader("resources/shaders/default.vert", "resources/shaders/default.frag");
 
-	Object()
-	{
-		std::cout << &shader << std::endl;
-	}
-
 	void Render();
 
 };
