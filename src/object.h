@@ -12,10 +12,11 @@ public:
 	Mesh mesh;
 	Texture texture;
 	Transform transform;
-	Shader shader = Shader("resources/shaders/default.vert", "resources/shaders/default.frag");
+	Shader* shader = nullptr;
 
-	Object(glm::vec2 position = glm::vec2(0, 0), glm::vec2 scale = glm::vec2(1, 1), const char* texturePath = DEFAULT_TEXTURE)
+	Object(Shader* shader, glm::vec2 position = glm::vec2(0, 0), glm::vec2 scale = glm::vec2(1, 1), const char* texturePath = DEFAULT_TEXTURE)
 	{
+		this->shader = shader;
 		allObjects.emplace_back(*this);
 		texture = Texture(texturePath);
 		transform = Transform(position, scale);

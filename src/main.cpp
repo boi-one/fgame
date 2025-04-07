@@ -2,7 +2,6 @@
 #include <SDL.h>
 #include <SDL_image.h>
 #include "imgui.h"
-#include "imgui_impl_sdl2.h"
 #include "imgui_impl_opengl3.h"
 #include <iostream>
 #include "object.h"
@@ -120,7 +119,7 @@ int CheckForGLError(std::string fnName)
 int main()
 {
 	Camera camera;
-	
+
 #pragma region setup
 	InitReturn r = WindowInitialization(camera);
 	if (r.failed == -1) return -1;
@@ -132,15 +131,12 @@ int main()
 	ImGui_ImplOpenGL3_Init("#version 330");
 	ImGuiIO& io = ImGui::GetIO();
 #pragma endregion setup
-	Object base({-2.8f, 0});
+	Shader defaultShader("resources/shaders/default.vert", "resources/shaders/default.frag");
+	Object base(&defaultShader, { 0, 0 });
+	Object base2(&defaultShader, { 0, -2 });
 	while (running)
 	{
 		SDL_Event event;
-		while (SDL_PollEvent(&event))
-		{
-			ImGui_ImplSDL2_ProcessEvent(&event);
-			if (event.type == SDL_QUIT)	running = false;
-		}
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplSDL2_NewFrame();
 		ImGui::NewFrame();
@@ -153,13 +149,15 @@ int main()
 		//Update here 
 
 		camera.SetProjection();
-		
+
 		for (Object& object : Object::allObjects)
 		{
-			object.shader.Use();
-			object.shader.SetMat4("Projection", camera.GetProjection());
-			base.transform.SetTransform();
-			base.Render();
+			std::cout << Object::allObjects.size() << std::endl;
+
+			object.shader->Use();
+			object.shader->SetMat4("Projection", camera.GetProjection());
+			object.transform.SetTransform();
+			object.Render();
 		}
 
 		ImGui::Render();
@@ -171,7 +169,7 @@ int main()
 	ImGui::DestroyContext();
 	glDeleteVertexArrays(1, &base.mesh.VAO);
 	glDeleteBuffers(1, &base.mesh.VBO);
-	glDeleteProgram(base.shader.ID);
+	glDeleteProgram(base.shader->ID);
 
 	return 0;
 }
