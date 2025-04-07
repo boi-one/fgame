@@ -5,46 +5,8 @@
 #include "imgui_impl_opengl3.h"
 #include <iostream>
 #include "object.h"
-
-struct Camera
-{
-	struct Viewport
-	{
-		int windowWidth = 500;
-		int windowHeight = 500;
-
-		float left{ 0 }, right{ 0 }, top{ 0 }, bottom{ 0 };
-	};
-	Viewport viewport;
-	glm::vec2 position = glm::vec2(0, 0);
-
-	void SetProjection()
-	{
-		viewport.left = -(viewport.windowWidth * 0.5f);
-		viewport.right = viewport.windowWidth * 0.5f;
-		viewport.top = viewport.windowHeight * 0.5f;
-		viewport.bottom = -(viewport.windowHeight * 0.5f);
-
-		float scale = 0.01f;
-
-		projection = glm::mat4(1.0f);
-
-		projection = glm::ortho(
-			(viewport.left + position.x) * scale,
-			(viewport.right + position.x) * scale,
-			(viewport.bottom + position.y) * scale,
-			(viewport.top + position.y) * scale,
-			-1.0f, 1.0f);
-	}
-
-	glm::mat4 GetProjection()
-	{
-		return projection;
-	}
-
-private:
-	glm::mat4 projection;
-};
+#include "input.h"
+#include "camera.h"
 
 struct InitReturn
 {
@@ -131,6 +93,9 @@ int main()
 	ImGui_ImplOpenGL3_Init("#version 330");
 	ImGuiIO& io = ImGui::GetIO();
 #pragma endregion setup
+
+	Input inputManager(&camera);
+
 	Shader defaultShader("resources/shaders/default.vert", "resources/shaders/default.frag");
 	Object base(&defaultShader, { 0, 0 });
 	Object base2(&defaultShader, { 0, -2 });
@@ -146,14 +111,14 @@ int main()
 		glClearColor(1.0f, .0f, .0f, 1.f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		//Update here 
+		// VVV Update here VVV
+
+		inputManager.Update(0);
 
 		camera.SetProjection();
 
 		for (Object& object : Object::allObjects)
 		{
-			std::cout << Object::allObjects.size() << std::endl;
-
 			object.shader->Use();
 			object.shader->SetMat4("Projection", camera.GetProjection());
 			object.transform.SetTransform();
