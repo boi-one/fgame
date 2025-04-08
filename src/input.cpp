@@ -7,6 +7,7 @@ void Input::SDLEvents()
 	{
 		ImGui_ImplSDL2_ProcessEvent(&event);
 		if (event.type == SDL_QUIT)	running = false;
+		mouse.ProcessInput(event);
 	}
 }
 
@@ -26,7 +27,7 @@ void Input::Update(float deltaTime)
 
 	const Uint8* keyState = SDL_GetKeyboardState(nullptr);
 	if (keyState[SDL_SCANCODE_F1]) printf("f1");
-
+	if (mouse.LeftDown()) printf("click\n");
 }
 
 void Input::ProcessInput()

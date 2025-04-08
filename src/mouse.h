@@ -1,6 +1,7 @@
 #pragma once
 #include "glm/glm.hpp"
 #include "camera.h"
+#include "SDL.h"
 
 class Mouse
 {
@@ -12,7 +13,7 @@ public:
 	void SetScreenPosition(int x, int y);
 
 	void RegisterInput(bool registerDown, bool& down, bool& hold);
-	void ProcessInput();
+	void ProcessInput(SDL_Event& event);
 		
 	//TODO: make up functionality
 

@@ -1,10 +1,9 @@
 #include "mouse.h"
-#include "SDL.h"
+
 
 void Mouse::Update(Camera& camera)
 {
 	position = camera.ToWorldPosition(screenPosition);
-	ProcessInput();
 }
 
 void Mouse::SetScreenPosition(int x, int y)
@@ -27,45 +26,40 @@ void Mouse::RegisterInput(bool registerDown, bool& down, bool& hold)
 	}
 }
 
-void Mouse::ProcessInput()
+void Mouse::ProcessInput(SDL_Event& event)
 {
-	SDL_Event event;
-	while (SDL_PollEvent(&event)) //TODO: MOVE THIS ONE TO THE MAIN SDL_EVENTS LOOP
+	switch (event.type)
 	{
-		printf("Event type: %d\n", event.type);
-
-		switch (event.type)
+	case SDL_MOUSEBUTTONDOWN:
+		switch (event.button.button)
 		{
-		case SDL_MOUSEBUTTONDOWN:
-			switch (event.button.button)
-			{
-			case SDL_BUTTON_LEFT:
-				printf("down");
-				RegisterInput(true, leftDown, leftHold);
-				break;
-			case SDL_BUTTON_RIGHT:
-				RegisterInput(true, rightDown, rightHold);
-				break;
-			case SDL_BUTTON_MIDDLE:
-				RegisterInput(true, middleDown, middleHold);
-				break;
-			}
+		case SDL_BUTTON_LEFT:
+			printf("press down!!!!!!!!!!!!!!!!!\n");
+			RegisterInput(true, leftDown, leftHold);
 			break;
-		case SDL_MOUSEBUTTONUP:
-			switch (event.button.button)
-			{
-			case SDL_BUTTON_LEFT:
-				RegisterInput(false, leftDown, leftHold);
-				break;
-			case SDL_BUTTON_RIGHT:
-				RegisterInput(false, rightDown, rightHold);
-				break;
-			case SDL_BUTTON_MIDDLE:
-				RegisterInput(false, middleDown, middleHold);
-				break;
-			}
+		case SDL_BUTTON_RIGHT:
+			RegisterInput(true, rightDown, rightHold);
+			break;
+		case SDL_BUTTON_MIDDLE:
+			RegisterInput(true, middleDown, middleHold);
 			break;
 		}
+		break;
+	case SDL_MOUSEBUTTONUP:
+		switch (event.button.button)
+		{
+		case SDL_BUTTON_LEFT:
+			printf("press UP!!!!!!!!!!!!!!!!!\n");
+			RegisterInput(false, leftDown, leftHold);
+			break;
+		case SDL_BUTTON_RIGHT:
+			RegisterInput(false, rightDown, rightHold);
+			break;
+		case SDL_BUTTON_MIDDLE:
+			RegisterInput(false, middleDown, middleHold);
+			break;
+		}
+		break;
 	}
 }
 
