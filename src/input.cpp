@@ -26,7 +26,7 @@ void Input::Update(float deltaTime)
 	ProcessInput();
 
 	const Uint8* keyState = SDL_GetKeyboardState(nullptr);
-	if (keyState[SDL_SCANCODE_F1]) printf("f1");
+	if (input[A].Down()) printf("A\n");
 	if (mouse.LeftDown()) printf("click\n");
 }
 
@@ -59,9 +59,12 @@ void Input::Key::RegisterInput(const Uint8* key) const
 {
 	if (key[sdlk])
 	{
-		if (!hold) down = true;
-		else hold = false;
-		hold = true;
+		if (!down) hold = true;
+		else if (hold)
+		{
+			down = true;
+			hold = false;
+		}
 	}
 	else
 	{

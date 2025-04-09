@@ -4,6 +4,10 @@
 void Mouse::Update(Camera& camera)
 {
 	position = camera.ToWorldPosition(screenPosition);
+	RegisterHold(leftDown, leftHold);
+	RegisterHold(rightDown, rightHold);
+	RegisterHold(middleDown, middleHold);
+
 }
 
 void Mouse::SetScreenPosition(int x, int y)
@@ -11,18 +15,22 @@ void Mouse::SetScreenPosition(int x, int y)
 	position = { x, y };
 }
 
-void Mouse::RegisterInput(bool registerDown, bool& down, bool& hold)
+void Mouse::RegisterInput(bool registerDown, bool& mdown, bool& mhold)
 {
-	if (registerDown)
-	{
-		if (!hold) down = true;
-		else hold = false;
-		hold = true;
-	}
+	if (registerDown) mdown = true;
 	else
 	{
-		hold = false;
-		down = false;
+		mhold = false;
+		mdown = false;
+	}
+}
+
+void Mouse::RegisterHold(bool& mdown, bool& mhold)
+{
+	if (mdown)
+	{
+		mdown = false;
+		mhold = true;
 	}
 }
 
@@ -34,7 +42,6 @@ void Mouse::ProcessInput(SDL_Event& event)
 		switch (event.button.button)
 		{
 		case SDL_BUTTON_LEFT:
-			printf("press down!!!!!!!!!!!!!!!!!\n");
 			RegisterInput(true, leftDown, leftHold);
 			break;
 		case SDL_BUTTON_RIGHT:
@@ -49,7 +56,6 @@ void Mouse::ProcessInput(SDL_Event& event)
 		switch (event.button.button)
 		{
 		case SDL_BUTTON_LEFT:
-			printf("press UP!!!!!!!!!!!!!!!!!\n");
 			RegisterInput(false, leftDown, leftHold);
 			break;
 		case SDL_BUTTON_RIGHT:

@@ -12,7 +12,8 @@ public:
 	void Update(Camera& camera);
 	void SetScreenPosition(int x, int y);
 
-	void RegisterInput(bool registerDown, bool& down, bool& hold);
+	void RegisterInput(bool registerDown, bool& mdown, bool& mhold);
+	void RegisterHold(bool& mdown, bool& mhold);
 	void ProcessInput(SDL_Event& event);
 		
 	//TODO: make up functionality
@@ -30,15 +31,15 @@ public:
 	//middleup
 
 private:
-	bool leftDown;
-	bool leftHold;
-	bool leftUp;
+	bool leftDown = false;
+	bool leftHold = false;
+	bool leftUp = false;
 
-	bool rightDown;
-	bool rightHold;
-	bool rightUp;
+	bool rightDown = false;
+	bool rightHold = false;
+	bool rightUp = false;
 
-	bool middleDown;
-	bool middleHold;
-	bool middleUp;
+	bool middleDown = false;
+	bool middleHold = false;
+	bool middleUp = false;
 };
